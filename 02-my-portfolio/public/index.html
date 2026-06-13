@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gopika T K | Computer Science & Engineering Portfolio</title>
+  <meta name="description" content="Professional developer portfolio of Gopika T K, featuring the CANTEX Flask-based canteen management application, core skills in React, HTML, JS, and Node.js.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <main class="container" id="main-portfolio">
+    <!-- Header/Hero Section -->
+    <header class="header-card" id="portfolio-header">
+      <div class="profile-container">
+        <!-- Profile Avatar with Curved Text SVG -->
+        <div class="profile-avatar-wrapper">
+          <svg width="110" height="110" viewBox="0 0 100 100" class="profile-avatar" id="profile-avatar" aria-label="Profile Avatar">
+            <defs>
+              <path id="text-path" d="M 15 50 A 35 35 0 0 0 85 50" fill="none" />
+            </defs>
+            <!-- Outer dotted ring -->
+            <circle cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="3 3" />
+            <!-- Inner solid border -->
+            <circle cx="50" cy="50" r="38" fill="none" stroke="var(--accent)" stroke-width="1" opacity="0.3" />
+            <!-- User outline -->
+            <circle cx="50" cy="40" r="11" fill="none" stroke="var(--accent)" stroke-width="2" />
+            <path d="M 28 72 A 22 22 0 0 1 72 72" fill="none" stroke="var(--accent)" stroke-width="2" />
+            <!-- Circular curved text -->
+            <text font-family="'Outfit', sans-serif" font-size="7.5" font-weight="700" fill="var(--accent)" letter-spacing="1">
+              <textPath href="#text-path" startOffset="50%" text-anchor="middle">CSE STUDENT</textPath>
+            </text>
+          </svg>
+        </div>
+
+        <!-- Name & Details -->
+        <div class="profile-details">
+          <h1 class="profile-name" id="user-name">Gopika T K</h1>
+          <p class="profile-title" id="user-subtitle">Computer Science & Engineering Student</p>
+          
+          <!-- Skills Badges -->
+          <div class="skills-container" id="skills-list">
+            <span class="badge">React</span>
+            <span class="badge">HTML</span>
+            <span class="badge">JS</span>
+            <span class="badge">Node</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Social Connections -->
+      <div class="socials-container" id="social-handles">
+        <!-- LinkedIn -->
+        <a href="https://www.linkedin.com/in/gopika-tk-16a66b297/" class="social-btn" id="social-linkedin" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn Profile">
+          <svg viewBox="0 0 24 24">
+            <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.32 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.79M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77Z"/>
+          </svg>
+        </a>
+        <!-- GitHub -->
+        <a href="https://github.com/gopika-tk" class="social-btn" id="social-github" target="_blank" rel="noopener noreferrer" aria-label="GitHub Profile">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+          </svg>
+        </a>
+      </div>
+    </header>
+
+    <!-- Projects Section -->
+    <section class="projects-section" id="projects-showcase">
+      <h2 class="section-title">Projects Showcase</h2>
+      
+      <div class="projects-grid">
+        <!-- Unified CANTEX Project Card -->
+        <article class="project-card" id="project-cantex">
+          <div class="schematic-canvas">
+            <svg viewBox="0 0 500 135" xmlns="http://www.w3.org/2000/svg">
+              <!-- Client Browser (Left) -->
+              <rect x="15" y="15" width="110" height="75" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <line x1="15" y1="28" x2="125" y2="28" stroke="currentColor" stroke-width="1" />
+              <circle cx="21" cy="21" r="1.5" fill="currentColor" />
+              <circle cx="26" cy="21" r="1.5" fill="currentColor" />
+              <circle cx="31" cy="21" r="1.5" fill="currentColor" />
+              <rect x="25" y="36" width="24" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5" />
+              <rect x="57" y="36" width="24" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5" />
+              <rect x="89" y="36" width="24" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1" opacity="0.5" />
+              <circle cx="98" cy="65" r="5" fill="none" stroke="currentColor" stroke-width="1" />
+              <path d="M 95 65 L 101 65 M 98 62 L 98 68" stroke="currentColor" stroke-width="0.8" />
+              <rect x="25" y="60" width="35" height="6" rx="1" fill="none" stroke="currentColor" stroke-width="1" opacity="0.7" />
+              <text x="70" y="105" font-size="8" fill="var(--text-secondary)" text-anchor="middle">Customer Web Portal</text>
+
+              <!-- Flow to Server -->
+              <path d="M 125 52 L 195 52" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 4" class="animated-flow" />
+
+              <!-- Flask Server tower (Center) -->
+              <rect x="195" y="15" width="80" height="75" rx="5" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <rect x="203" y="23" width="64" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1" opacity="0.7" />
+              <circle cx="210" cy="30" r="2" fill="var(--accent)" class="pulse-node" />
+              <line x1="218" y1="30" x2="258" y2="30" stroke="currentColor" stroke-width="1" opacity="0.5" />
+              
+              <rect x="203" y="45" width="64" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1" opacity="0.7" />
+              <circle cx="210" cy="52" r="2" fill="var(--accent)" class="pulse-node" />
+              <line x1="218" y1="52" x2="258" y2="52" stroke="currentColor" stroke-width="1" opacity="0.5" />
+              
+              <rect x="203" y="67" width="64" height="14" rx="1.5" fill="none" stroke="currentColor" stroke-width="1" opacity="0.7" />
+              <circle cx="210" cy="74" r="2" fill="var(--accent)" class="pulse-node" />
+              <line x1="218" y1="74" x2="258" y2="74" stroke="currentColor" stroke-width="1" opacity="0.5" />
+              <text x="235" y="105" font-size="8" fill="var(--text-secondary)" text-anchor="middle">Flask API Server</text>
+
+              <!-- Flow to DB & UPI -->
+              <path d="M 275 35 L 365 25" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 4" class="animated-flow" />
+              <path d="M 275 70 L 365 75" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 4" class="animated-flow" />
+
+              <!-- SQLite DB Cylinder (Top Right) -->
+              <path d="M 365 20 A 22 6 0 0 0 409 20 M 365 20 V 38 A 22 6 0 0 0 409 38 V 20" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <ellipse cx="387" cy="20" rx="22" ry="6" fill="none" stroke="currentColor" stroke-width="1.5" />
+              <text x="387" y="32" font-size="7.5" fill="currentColor" text-anchor="middle" font-weight="600">sqlite</text>
+              <text x="387" y="52" font-size="8" fill="var(--text-secondary)" text-anchor="middle">SQLAlchemy DB</text>
+
+              <!-- UPI Mobile Mockup (Bottom Right) -->
+              <rect x="365" y="65" width="44" height="40" rx="4" fill="none" stroke="currentColor" stroke-width="1.2" />
+              <rect x="370" y="70" width="34" height="30" rx="2" fill="none" stroke="currentColor" stroke-width="0.8" opacity="0.5" />
+              <text x="387" y="80" font-size="6" font-weight="700" fill="currentColor" text-anchor="middle" font-family="'Space Grotesk', sans-serif">UPI Pay</text>
+              <rect x="381" y="86" width="12" height="12" fill="currentColor" opacity="0.8" />
+              <text x="387" y="118" font-size="8" fill="var(--text-secondary)" text-anchor="middle">UPI Gateway</text>
+            </svg>
+          </div>
+          <div class="project-info">
+            <h3 class="project-title">CANTEX Canteen Management System</h3>
+            <p class="project-desc">A full-stack canteen order management web application. It integrates a customer portal for browsing menus and ordering, a simulated UPI payment checkout gateway, database tables via Flask-SQLAlchemy, WTForms inputs, secure user authentication (Flask-Login), and active administration dashboards for live staff management.</p>
+          </div>
+          <div class="skills-container">
+            <span class="badge">Flask</span>
+            <span class="badge">Python</span>
+            <span class="badge">SQLite</span>
+            <span class="badge">WTForms</span>
+            <span class="badge">React</span>
+            <span class="badge">HTML/JS/CSS</span>
+          </div>
+          <!-- GitHub Link Button -->
+          <a href="https://github.com/gopika-tk/cantex/tree/main/cantex" class="project-github-link" target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/>
+            </svg>
+            <span>View Source on GitHub</span>
+          </a>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <!-- Switcher integration -->
+  <script src="switcher.js"></script>
+</body>
+</html>
