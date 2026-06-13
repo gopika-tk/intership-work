@@ -1,0 +1,1585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Edge Impulse Motion Gesture Classifier</title>
+    <style>
+        /* Modern Mobile-First Cyber Aesthetic Styles */
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+        :root {
+            --bg-dark: #070710;
+            --bg-surface: rgba(14, 13, 29, 0.55);
+            --border-glass: rgba(255, 255, 255, 0.06);
+            
+            --text-primary: #f3f4f6;
+            --text-secondary: #9ca3af;
+            --text-muted: #6b7280;
+
+            --neon-blue: #00f2fe;
+            --neon-purple: #bf5af2;
+            --neon-pink: #ff2d55;
+            --neon-green: #34c759;
+            --neon-yellow: #facc15;
+            
+            --font-main: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        /* Prevent zooming/double-taps and set full-height viewports */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            touch-action: manipulation;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+            background-color: var(--bg-dark);
+        }
+
+        body {
+            font-family: var(--font-main);
+            color: var(--text-primary);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-image: 
+                radial-gradient(circle at 50% 15%, rgba(91, 33, 182, 0.14) 0%, transparent 50%), 
+                radial-gradient(circle at 50% 85%, rgba(6, 182, 212, 0.08) 0%, transparent 50%);
+            background-size: 100% 100%;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+            
+            /* iOS Safe Area Support */
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+            padding-left: env(safe-area-inset-left, 0px);
+            padding-right: env(safe-area-inset-right, 0px);
+        }
+
+        /* App Main Shell Container */
+        .app-container {
+            width: 100%;
+            max-width: 1200px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+        }
+
+        /* Loading Overlay & System Error State */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #05040a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.4s ease-out;
+            padding: 20px;
+        }
+
+        .loading-card {
+            text-align: center;
+            width: 100%;
+            max-width: 400px;
+            padding: 30px 20px;
+            background: rgba(13, 11, 28, 0.9);
+            border: 1px solid var(--border-glass);
+            border-radius: 20px;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.5);
+        }
+
+        .tech-spinner {
+            position: relative;
+            width: 70px;
+            height: 70px;
+            margin: 0 auto 24px;
+        }
+
+        .spinner-ring {
+            position: absolute;
+            border: 3px solid transparent;
+            border-radius: 50%;
+        }
+
+        .spinner-ring.outer {
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-top-color: var(--neon-blue);
+            animation: spin 1.8s linear infinite;
+        }
+
+        .spinner-ring.middle {
+            top: 8px; left: 8px; right: 8px; bottom: 8px;
+            border-bottom-color: var(--neon-purple);
+            animation: spin-reverse 1.3s linear infinite;
+        }
+
+        .spinner-ring.inner {
+            top: 16px; left: 16px; right: 16px; bottom: 16px;
+            border-left-color: var(--neon-pink);
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes spin-reverse {
+            0% { transform: rotate(360deg); }
+            100% { transform: rotate(0deg); }
+        }
+
+        .loading-card h2 {
+            font-size: clamp(1.2rem, 4vw, 1.4rem);
+            font-weight: 800;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .loading-card p {
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            margin-bottom: 16px;
+        }
+
+        .error-details {
+            background: rgba(239, 68, 68, 0.06);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 10px;
+            padding: 14px;
+            margin-top: 12px;
+            text-align: left;
+        }
+
+        .error-msg {
+            color: #fca5a5;
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            margin-bottom: 12px;
+            word-break: break-all;
+        }
+
+        /* Header Section */
+        header {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .logo-area {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .logo-area h1 {
+            font-size: clamp(1.3rem, 4.5vw, 1.6rem);
+            font-weight: 800;
+            background: linear-gradient(90deg, #ffffff, var(--neon-blue));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 0.5px;
+        }
+
+        .project-badge {
+            font-family: var(--font-mono);
+            font-size: 0.72rem;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid var(--border-glass);
+            padding: 3px 8px;
+            border-radius: 5px;
+            align-self: flex-start;
+            word-break: break-all;
+        }
+
+        /* Responsive Badges Wrapping */
+        .sensor-badge {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            background: rgba(239, 68, 68, 0.12);
+            color: var(--neon-pink);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            padding: 4px 10px;
+            border-radius: 30px;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            text-align: center;
+        }
+
+        .sensor-badge.active {
+            background: rgba(52, 199, 89, 0.12);
+            color: var(--neon-green);
+            border: 1px solid rgba(52, 199, 89, 0.2);
+        }
+
+        /* Responsive Content Grid: Default Stacking Mobile */
+        main {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+            width: 100%;
+        }
+
+        /* Card Container Base */
+        .card {
+            background: var(--bg-surface);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            display: flex;
+            flex-direction: column;
+            transition: border-color 0.25s, box-shadow 0.25s;
+            position: relative;
+            width: 100%;
+            /* 60 FPS performance optimizations on mobile */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            transform: translateZ(0);
+            will-change: transform, border-color, box-shadow;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .card-title {
+            font-size: clamp(0.85rem, 3.2vw, 0.95rem);
+            font-weight: 700;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .card-title::before {
+            content: '';
+            display: inline-block;
+            width: 3.5px;
+            height: 13px;
+            background: var(--neon-blue);
+            border-radius: 1.5px;
+        }
+
+        /* Controls Section */
+        .control-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            width: 100%;
+        }
+
+        /* Touch-Friendly Action Button */
+        .btn {
+            position: relative;
+            background: linear-gradient(135deg, #0d8cf0 0%, var(--neon-blue) 100%);
+            border: none;
+            color: #040307;
+            font-family: var(--font-main);
+            font-weight: 800;
+            font-size: clamp(0.95rem, 3.5vw, 1.05rem);
+            width: 100%;
+            /* Minimum touch target of 48px */
+            min-height: 48px;
+            border-radius: 24px;
+            cursor: pointer;
+            overflow: hidden;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+            filter: brightness(0.9);
+        }
+
+        .btn.active {
+            background: linear-gradient(135deg, #e01b4c 0%, var(--neon-pink) 100%);
+            color: white;
+        }
+
+        @keyframes mobileBtnPulse {
+            0% { border: 1.5px solid transparent; }
+            50% { border: 1.5px solid rgba(0, 242, 254, 0.6); }
+            100% { border: 1.5px solid transparent; }
+        }
+
+        .btn-pulse:not(.active) {
+            animation: mobileBtnPulse 2s infinite ease-in-out;
+        }
+
+        /* Raw Value Axis Boxes */
+        .raw-values-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            width: 100%;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .raw-badge {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            padding: 8px 4px;
+            text-align: center;
+            font-family: var(--font-mono);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .raw-badge.x-axis { border-color: rgba(255, 45, 85, 0.12); color: var(--neon-pink); }
+        .raw-badge.y-axis { border-color: rgba(52, 199, 89, 0.12); color: var(--neon-green); }
+        .raw-badge.z-axis { border-color: rgba(0, 242, 254, 0.12); color: var(--neon-blue); }
+
+        .axis-label {
+            font-size: clamp(0.65rem, 2.5vw, 0.7rem);
+            text-transform: uppercase;
+            color: var(--text-secondary);
+            margin-bottom: 2px;
+            letter-spacing: 0.5px;
+        }
+
+        .axis-value {
+            font-weight: 700;
+            font-size: clamp(0.85rem, 3.2vw, 0.95rem);
+        }
+
+        /* Visualizer Waveform Canvas */
+        .canvas-container {
+            width: 100%;
+            /* Strict height constraint on mobile */
+            height: clamp(180px, 22vh, 220px);
+            position: relative;
+            background: rgba(5, 4, 10, 0.4);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.02);
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* Touch-Friendly Error Banner */
+        .sensor-error-banner {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            color: #fca5a5;
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.82rem;
+            animation: slideIn 0.25s ease-out;
+            width: 100%;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-8px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .btn-close-banner {
+            background: none;
+            border: none;
+            color: #fca5a5;
+            font-size: 1.25rem;
+            cursor: pointer;
+            line-height: 1;
+            /* Minimum touch target 44px */
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        /* Current Gesture Card */
+        .active-gesture-card {
+            min-height: 180px;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .gesture-display {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        .gesture-glow-ring {
+            width: 76px;
+            height: 76px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.01);
+            border: 2px dashed rgba(255, 255, 255, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .gesture-glow-ring.circle {
+            border-color: var(--neon-yellow);
+            border-style: solid;
+            box-shadow: 0 0 12px rgba(250, 204, 21, 0.15);
+            animation: rotateGlow 20s linear infinite;
+        }
+
+        .gesture-glow-ring.wave {
+            border-color: var(--neon-blue);
+            border-style: solid;
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.15);
+            animation: pulseGlow 1.8s ease-in-out infinite;
+        }
+
+        .gesture-glow-ring.idle {
+            border-color: var(--neon-purple);
+            border-style: solid;
+            box-shadow: 0 0 12px rgba(191, 90, 242, 0.15);
+        }
+
+        @keyframes rotateGlow {
+            100% { transform: rotate(360deg); }
+        }
+
+        @keyframes pulseGlow {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+
+        .gesture-symbol {
+            font-size: clamp(1.8rem, 6vw, 2.2rem);
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .gesture-glow-ring.circle .gesture-symbol { color: var(--neon-yellow); }
+        .gesture-glow-ring.wave .gesture-symbol { color: var(--neon-blue); }
+        .gesture-glow-ring.idle .gesture-symbol { color: var(--neon-purple); }
+
+        .gesture-name-large {
+            font-size: clamp(1.8rem, 5.5vw, 2.2rem);
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: #ffffff;
+            text-transform: uppercase;
+        }
+
+        .confidence-badge {
+            font-family: var(--font-mono);
+            font-size: clamp(0.72rem, 2.8vw, 0.8rem);
+            font-weight: 600;
+            color: var(--text-secondary);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--border-glass);
+            padding: 3px 10px;
+            border-radius: 5px;
+            margin-top: 6px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Simplified Card Glows on Mobile to support 60 FPS */
+        .card.glow-circle { border-color: var(--neon-yellow); }
+        .card.glow-wave { border-color: var(--neon-blue); }
+        .card.glow-idle { border-color: var(--neon-purple); }
+
+        /* Probabilities Progress Grid */
+        .probability-rows {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            width: 100%;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .probability-row {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .probability-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: clamp(0.85rem, 3.2vw, 0.95rem);
+            font-weight: 600;
+        }
+
+        .gesture-percentage {
+            font-family: var(--font-mono);
+        }
+
+        .probability-bar-container {
+            background: rgba(255, 255, 255, 0.02);
+            height: 8px;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.01);
+            position: relative;
+        }
+
+        .probability-bar {
+            height: 100%;
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        .probability-bar.circle { background: linear-gradient(90deg, #d97706, var(--neon-yellow)); }
+        .probability-bar.wave { background: linear-gradient(90deg, #0284c7, var(--neon-blue)); }
+        .probability-bar.idle { background: linear-gradient(90deg, #9333ea, var(--neon-purple)); }
+
+        /* System Logs Screen Console */
+        .terminal-card {
+            background: rgba(8, 7, 18, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 14px;
+            font-family: var(--font-mono);
+            display: flex;
+            flex-direction: column;
+            height: clamp(160px, 20vh, 200px);
+            padding: 0;
+            overflow: hidden;
+            box-shadow: none; /* remove for performance */
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.02);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 4px;
+        }
+
+        .terminal-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .terminal-dot.red { background: var(--neon-pink); }
+        .terminal-dot.yellow { background: var(--neon-yellow); }
+        .terminal-dot.green { background: var(--neon-green); }
+
+        .terminal-logs {
+            flex: 1;
+            padding: 10px 12px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            font-size: 0.72rem;
+            line-height: 1.35;
+            color: #d1d5db;
+        }
+
+        .log-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .log-time {
+            color: var(--text-muted);
+            flex-shrink: 0;
+        }
+
+        .log-tag {
+            font-weight: 600;
+            flex-shrink: 0;
+            padding: 0 3px;
+            border-radius: 2px;
+            font-size: 0.65rem;
+        }
+
+        .log-line.info .log-tag { background: rgba(0, 242, 254, 0.08); color: var(--neon-blue); }
+        .log-line.warning .log-tag { background: rgba(250, 204, 21, 0.08); color: var(--neon-yellow); }
+        .log-line.error .log-tag { background: rgba(255, 45, 85, 0.08); color: var(--neon-pink); }
+        .log-line.success .log-tag { background: rgba(52, 199, 89, 0.08); color: var(--neon-green); }
+        
+        .log-text {
+            word-break: break-all;
+        }
+
+        /* Tablet Layout Breakpoint (769px - 1024px) */
+        @media (min-width: 769px) and (max-width: 1024px) {
+            .app-container {
+                padding: 24px;
+                gap: 20px;
+            }
+            main {
+                grid-template-columns: 1.2fr 1fr;
+                gap: 20px;
+            }
+            .grid-full-width {
+                grid-column: 1 / -1;
+            }
+            .card {
+                padding: 20px;
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                box-shadow: 0 8px 30px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        /* Desktop Layout Breakpoint (>= 1025px) */
+        @media (min-width: 1025px) {
+            .app-container {
+                padding: 30px 24px;
+                gap: 24px;
+            }
+            main {
+                grid-template-columns: 1.2fr 1fr;
+                gap: 24px;
+            }
+            .grid-full-width {
+                grid-column: 1 / -1;
+            }
+            .card {
+                padding: 24px;
+                border-radius: 20px;
+                backdrop-filter: blur(16px);
+                -webkit-backdrop-filter: blur(16px);
+                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.35);
+            }
+            .btn:hover {
+                transform: translateY(-2px);
+                filter: brightness(1.1);
+            }
+            .btn:active {
+                transform: translateY(1px);
+            }
+            
+            /* Apply beautiful glowing box-shadows on desktop only */
+            .card.glow-circle {
+                box-shadow: 0 0 35px rgba(250, 204, 21, 0.2), 0 12px 40px rgba(0, 0, 0, 0.35);
+            }
+            .card.glow-wave {
+                box-shadow: 0 0 35px rgba(0, 242, 254, 0.2), 0 12px 40px rgba(0, 0, 0, 0.35);
+            }
+            .card.glow-idle {
+                box-shadow: 0 0 35px rgba(191, 90, 242, 0.2), 0 12px 40px rgba(0, 0, 0, 0.35);
+            }
+        }
+
+        /* Slim Scrollbars */
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.06);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Main Wrapper App Shell -->
+    <div class="app-container">
+
+        <!-- Header Bar -->
+        <header>
+            <div class="logo-area">
+                <h1>GESTURE SENSOR</h1>
+                <div class="project-badge" id="project-meta">Connecting...</div>
+            </div>
+            <div>
+                <span class="sensor-badge" id="sensor-badge">Sensors Off</span>
+            </div>
+        </header>
+
+        <!-- Interactive Grid Layout -->
+        <main>
+            <!-- Card 1: Controls & Values -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Sensor Acquisition</h3>
+                </div>
+                
+                <div class="sensor-error-banner" id="sensor-error-banner" style="display: none;">
+                    <span id="sensor-error-text">Permission Denied</span>
+                    <button class="btn-close-banner" onclick="hideSensorError()">&times;</button>
+                </div>
+
+                <div class="control-panel">
+                    <button class="btn btn-pulse" id="btn-sensors" onclick="onSensorsBtnClick()">
+                        START SENSORS
+                    </button>
+                    
+                    <div class="raw-values-grid">
+                        <div class="raw-badge x-axis">
+                            <span class="axis-label">Axis X</span>
+                            <span class="axis-value" id="val-x">0.00</span>
+                        </div>
+                        <div class="raw-badge y-axis">
+                            <span class="axis-label">Axis Y</span>
+                            <span class="axis-value" id="val-y">0.00</span>
+                        </div>
+                        <div class="raw-badge z-axis">
+                            <span class="axis-label">Axis Z</span>
+                            <span class="axis-value" id="val-z">0.00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2: Waveform Canvas -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Waveform Oscilloscope</h3>
+                </div>
+                <div class="canvas-container">
+                    <canvas id="waveform"></canvas>
+                </div>
+            </div>
+
+            <!-- Card 3: Active State Card -->
+            <div class="card active-gesture-card" id="current-gesture-card">
+                <h3 class="card-title" style="align-self: flex-start;">Current State</h3>
+                <div class="gesture-display">
+                    <div class="gesture-glow-ring" id="gesture-ring">
+                        <div class="gesture-symbol" id="gesture-symbol">--</div>
+                    </div>
+                    <div class="gesture-name-large" id="gesture-name-large">Inactive</div>
+                    <div class="confidence-badge" id="confidence-badge">0% CONFIDENCE</div>
+                </div>
+            </div>
+
+            <!-- Card 4: Predictions Probabilities -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">Gesture Probabilities</h3>
+                </div>
+                <div class="probability-rows">
+                    <!-- Circle Bar -->
+                    <div class="probability-row">
+                        <div class="probability-label">
+                            <span class="gesture-name" style="color: var(--neon-yellow);">Circle</span>
+                            <span class="gesture-percentage" id="pct-circle">0%</span>
+                        </div>
+                        <div class="probability-bar-container">
+                            <div class="probability-bar circle" id="bar-circle"></div>
+                        </div>
+                    </div>
+                    <!-- Wave Bar -->
+                    <div class="probability-row">
+                        <div class="probability-label">
+                            <span class="gesture-name" style="color: var(--neon-blue);">Wave</span>
+                            <span class="gesture-percentage" id="pct-wave">0%</span>
+                        </div>
+                        <div class="probability-bar-container">
+                            <div class="probability-bar wave" id="bar-wave"></div>
+                        </div>
+                    </div>
+                    <!-- Idle Bar -->
+                    <div class="probability-row">
+                        <div class="probability-label">
+                            <span class="gesture-name" style="color: var(--neon-purple);">Idle</span>
+                            <span class="gesture-percentage" id="pct-idle">0%</span>
+                        </div>
+                        <div class="probability-bar-container">
+                            <div class="probability-bar idle" id="bar-idle"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 5: Log Terminal screen -->
+            <div class="grid-full-width card terminal-card">
+                <div class="terminal-header">
+                    <div class="terminal-dots">
+                        <div class="terminal-dot red"></div>
+                        <div class="terminal-dot yellow"></div>
+                        <div class="terminal-dot green"></div>
+                    </div>
+                    <span>LOG MONITOR</span>
+                    <span style="opacity: 0.5;">TTY: /dev/wasm_impl</span>
+                </div>
+                <div class="terminal-logs" id="terminal-logs">
+                    <!-- Javascript logs append here -->
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Initialization Screen Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-card">
+            <div class="tech-spinner">
+                <div class="spinner-ring outer"></div>
+                <div class="spinner-ring middle"></div>
+                <div class="spinner-ring inner"></div>
+            </div>
+            <h2 id="loading-title">INITIALIZING SYSTEM</h2>
+            <p id="loading-subtitle">Contacting standalone WebAssembly module...</p>
+            <div class="error-details" id="error-details" style="display: none;">
+                <div class="error-msg" id="error-msg">Unknown System Error</div>
+                <button class="btn" style="min-height: 40px; border-radius: 12px; font-size: 0.9rem;" onclick="window.location.reload()">REBOOT MODULE</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edge Impulse setup script bindings -->
+    <script>
+        // System Log displayer
+        const logTerminal = document.getElementById('terminal-logs');
+        function logMessage(msg, type = 'info') {
+            const time = new Date().toLocaleTimeString();
+            console.log(`[${time}] [${type.toUpperCase()}] ${msg}`);
+            if (logTerminal) {
+                const logLine = document.createElement('div');
+                logLine.className = `log-line ${type}`;
+                logLine.innerHTML = `
+                    <span class="log-time">[${time}]</span>
+                    <span class="log-tag">${type.toUpperCase()}</span>
+                    <span class="log-text">${msg}</span>
+                `;
+                logTerminal.appendChild(logLine);
+                logTerminal.scrollTop = logTerminal.scrollHeight;
+                
+                // Limit nodes on mobile for DOM efficiency
+                while (logTerminal.childElementCount > 40) {
+                    logTerminal.removeChild(logTerminal.firstChild);
+                }
+            }
+        }
+
+        // Show Fatal System Failures
+        function showSystemError(msg) {
+            const title = document.getElementById('loading-title');
+            const subtitle = document.getElementById('loading-subtitle');
+            const spinner = document.querySelector('.tech-spinner');
+            const details = document.getElementById('error-details');
+            const errMsg = document.getElementById('error-msg');
+            
+            if (title) title.textContent = "SYSTEM FAULT";
+            if (subtitle) subtitle.textContent = "Fatal initialization failure.";
+            if (spinner) spinner.style.display = 'none';
+            if (details) details.style.display = 'block';
+            if (errMsg) errMsg.textContent = msg;
+        }
+
+        // Environment Check
+        if (typeof WebAssembly !== 'object') {
+            const err = "WebAssembly is not supported by this browser. Upgrade to a modern browser.";
+            logMessage(err, "error");
+            showSystemError(err);
+        }
+
+        // Global state vars
+        let classifierInitialized = false;
+        let activeSensorObj = null;
+        let sensorsRunning = false;
+        
+        let sampleInterval = null;
+        let inferenceInterval = null;
+        let animFrameId = null;
+        
+        let activeEventListeners = [];
+        let activeTimeouts = [];
+        let activeIntervals = [];
+        
+        let latestRaw = { x: 0, y: 0, z: 0 };
+        let sensorBuffer = []; // stores samples
+        const bufferLimit = 125; // 2000ms window size / 16ms frequency = 125 samples
+
+        // Hook into Emscripten bindings BEFORE script is fetched
+        window.Module = {
+            onRuntimeInitialized: function() {
+                logMessage("Standalone script parsed & WebAssembly runtime initialized.", "success");
+                initClassifier();
+            },
+            locateFile: function(path, prefix) {
+                logMessage(`Resolving external WASM binary asset: ${path} (prefix: ${prefix})`, "info");
+                return prefix + path;
+            },
+            setStatus: function(text) {
+                if (text) {
+                    logMessage(`WASM loader status: ${text}`, "info");
+                    const subtitle = document.getElementById('loading-subtitle');
+                    if (subtitle) subtitle.textContent = text;
+                }
+            },
+            onAbort: function(what) {
+                logMessage(`WASM system aborted: ${what}`, "error");
+                showSystemError(`WASM instance aborted: ${what}`);
+            }
+        };
+
+        function handleWasmLoadError(event) {
+            const err = "Failed to load 'edge-impulse-standalone.js'. Verify the file is in the public directory.";
+            logMessage(err, "error");
+            showSystemError(err);
+        }
+    </script>
+    
+    <!-- Load main script -->
+    <script src="edge-impulse-standalone.js" onerror="handleWasmLoadError(event)"></script>
+    
+    <!-- Core Application Code -->
+    <script>
+        // Init classifier safely
+        async function initClassifier() {
+            try {
+                logMessage("Initializing model classifier via Embind API bindings...", "info");
+                
+                if (typeof Module.init !== 'function') {
+                    throw new Error("Module.init is not exported. The generated library bindings are missing or incorrect.");
+                }
+                
+                let ret = Module.init();
+                if (typeof ret === 'number' && ret !== 0) {
+                    throw new Error("Module.init() execution failed with code: " + ret);
+                }
+                
+                classifierInitialized = true;
+                logMessage("Model classifier loaded and active.", "success");
+                
+                // Fetch dynamic metadata
+                let project = getProjectInfo();
+                logMessage(`Model Owner: ${project.owner}, Project Name: ${project.name}, Deploy Version: ${project.deploy_version}`, "info");
+                
+                let props = getProperties();
+                logMessage(`Model Config - Target Frequency: ${props.frequency}Hz, Input size: ${props.input_features_count}, Classes: ${props.labels.join(', ')}`, "info");
+                
+                // Display project title on header
+                document.getElementById('project-meta').textContent = `${project.owner} / ${project.name} (v${project.deploy_version})`;
+                
+                // Clear overlay screen
+                const overlay = document.getElementById('loading-overlay');
+                if (overlay) {
+                    overlay.style.opacity = '0';
+                    setTimeout(() => {
+                        overlay.style.display = 'none';
+                    }, 400);
+                }
+                
+                resetBuffer();
+            } catch (e) {
+                logMessage(`System initialization aborted: ${e.message}`, "error");
+                showSystemError(`System initialization aborted: ${e.message}`);
+            }
+        }
+
+        // Embind Safe Conversions
+        function convertToOrdinaryJsObject(emboundObj, prototype) {
+            let newObj = { };
+            for (const key of Object.getOwnPropertyNames(prototype)) {
+                const descriptor = Object.getOwnPropertyDescriptor(prototype, key);
+                if (descriptor && typeof descriptor.get === 'function') {
+                    newObj[key] = emboundObj[key];
+                }
+            }
+            return newObj;
+        }
+
+        function getProjectInfo() {
+            if (typeof Module.get_project !== 'function' || !Module.emcc_classification_project_t) {
+                throw new Error("Module.get_project or emcc_classification_project_t type is missing.");
+            }
+            return convertToOrdinaryJsObject(Module.get_project(), Module.emcc_classification_project_t.prototype);
+        }
+
+        function getProperties() {
+            if (typeof Module.get_properties !== 'function' || !Module.emcc_classification_properties_t) {
+                throw new Error("Module.get_properties or emcc_classification_properties_t type is missing.");
+            }
+            return convertToOrdinaryJsObject(Module.get_properties(), Module.emcc_classification_properties_t.prototype);
+        }
+
+        // Classifier execution via C++ WASM Memory
+        function runClassifier(rawData) {
+            if (typeof Module.run_classifier !== 'function') {
+                throw new Error("Module.run_classifier is not bound.");
+            }
+            
+            let typedArray = new Float32Array(rawData);
+            let numBytes = typedArray.length * typedArray.BYTES_PER_ELEMENT;
+            let ptr = Module._malloc(numBytes);
+            let heapBytes = new Uint8Array(Module.HEAPU8.buffer, ptr, numBytes);
+            heapBytes.set(new Uint8Array(typedArray.buffer));
+            
+            try {
+                let ret = Module.run_classifier(heapBytes.byteOffset, rawData.length, false);
+                if (ret.result !== 0) {
+                    throw new Error("run_classifier returned error code: " + ret.result);
+                }
+                
+                let jsResult = {
+                    anomaly: ret.anomaly,
+                    results: []
+                };
+                
+                for (let cx = 0; cx < ret.size(); cx++) {
+                    let c = ret.get(cx);
+                    jsResult.results.push({ label: c.label, value: c.value });
+                    c.delete();
+                }
+                
+                ret.delete();
+                return jsResult;
+            } finally {
+                Module._free(ptr);
+            }
+        }
+
+        // Buffer queues
+        function resetBuffer() {
+            sensorBuffer = [];
+            for (let i = 0; i < bufferLimit; i++) {
+                sensorBuffer.push([0, 0, 0]);
+            }
+        }
+
+        function collectSample() {
+            sensorBuffer.push([latestRaw.x, latestRaw.y, latestRaw.z]);
+            if (sensorBuffer.length > bufferLimit) {
+                sensorBuffer.shift();
+            }
+        }
+
+        // Continuous Classification loop
+        function runContinuousInference() {
+            if (!classifierInitialized || !sensorsRunning) return;
+            
+            // Flatten 125 samples of 3 axes -> 375 features
+            let features = [];
+            for (let i = 0; i < sensorBuffer.length; i++) {
+                features.push(sensorBuffer[i][0]); // X
+                features.push(sensorBuffer[i][1]); // Y
+                features.push(sensorBuffer[i][2]); // Z
+            }
+            
+            if (features.length !== 375) return;
+            
+            try {
+                logMessage("Inference loop running. Running WASM classification...", "info");
+                
+                let start = performance.now();
+                let result = runClassifier(features);
+                let duration = (performance.now() - start).toFixed(1);
+                
+                logMessage(`Predictions: Circle=${(result.results.find(r => r.label === 'Circle').value*100).toFixed(0)}%, Wave=${(result.results.find(r => r.label === 'Wave').value*100).toFixed(0)}%, Idle=${(result.results.find(r => r.label === 'Idle').value*100).toFixed(0)}% (${duration}ms)`, "success");
+                
+                updateDashboard(result);
+            } catch (e) {
+                logMessage(`Inference failed: ${e.message}`, "error");
+            }
+        }
+
+        // Update predictions dashboards
+        function updateDashboard(res) {
+            if (!res || !res.results) return;
+            
+            let maxLabel = "Idle";
+            let maxValue = -1;
+            
+            res.results.forEach(r => {
+                const labelLower = r.label.toLowerCase(); // 'circle', 'wave', 'idle'
+                const bar = document.getElementById(`bar-${labelLower}`);
+                const pct = document.getElementById(`pct-${labelLower}`);
+                if (bar) bar.style.width = `${(r.value * 100).toFixed(0)}%`;
+                if (pct) pct.textContent = `${(r.value * 100).toFixed(0)}%`;
+                
+                if (r.value > maxValue) {
+                    maxValue = r.value;
+                    maxLabel = r.label;
+                }
+            });
+            
+            // Update Active display elements
+            const gestureSymbol = document.getElementById('gesture-symbol');
+            const gestureNameLarge = document.getElementById('gesture-name-large');
+            const confidenceBadge = document.getElementById('confidence-badge');
+            const ring = document.getElementById('gesture-ring');
+            const card = document.getElementById('current-gesture-card');
+            
+            if (gestureNameLarge && confidenceBadge && gestureSymbol) {
+                gestureNameLarge.textContent = maxLabel;
+                confidenceBadge.textContent = `${(maxValue * 100).toFixed(0)}% CONFIDENCE`;
+                
+                if (maxLabel === 'Circle') {
+                    gestureSymbol.innerHTML = '&#9675;'; // circle glyph
+                } else if (maxLabel === 'Wave') {
+                    gestureSymbol.innerHTML = '&#12316;'; // tilde / wave wave glyph
+                } else if (maxLabel === 'Idle') {
+                    gestureSymbol.innerHTML = '&#8722;'; // dash glyph
+                } else {
+                    gestureSymbol.innerHTML = '--';
+                }
+            }
+            
+            if (card && ring) {
+                card.classList.remove('glow-circle', 'glow-wave', 'glow-idle');
+                ring.className = 'gesture-glow-ring';
+                
+                const lowerName = maxLabel.toLowerCase();
+                card.classList.add(`glow-${lowerName}`);
+                ring.classList.add(lowerName);
+            }
+        }
+
+        function resetDashboardUI() {
+            ['circle', 'wave', 'idle'].forEach(lbl => {
+                const bar = document.getElementById(`bar-${lbl}`);
+                const pct = document.getElementById(`pct-${lbl}`);
+                if (bar) bar.style.width = '0%';
+                if (pct) pct.textContent = '0%';
+            });
+            
+            const gestureSymbol = document.getElementById('gesture-symbol');
+            const gestureNameLarge = document.getElementById('gesture-name-large');
+            const confidenceBadge = document.getElementById('confidence-badge');
+            const ring = document.getElementById('gesture-ring');
+            const card = document.getElementById('current-gesture-card');
+            
+            if (gestureNameLarge) gestureNameLarge.textContent = "Inactive";
+            if (confidenceBadge) confidenceBadge.textContent = "0% CONFIDENCE";
+            if (gestureSymbol) gestureSymbol.innerHTML = "--";
+            
+            if (card) card.className = "card active-gesture-card";
+            if (ring) ring.className = "gesture-glow-ring";
+        }
+
+        // Banners
+        function showSensorError(msg) {
+            const banner = document.getElementById('sensor-error-banner');
+            const txt = document.getElementById('sensor-error-text');
+            if (banner && txt) {
+                txt.textContent = msg;
+                banner.style.display = 'flex';
+            }
+        }
+
+        function hideSensorError() {
+            const banner = document.getElementById('sensor-error-banner');
+            if (banner) {
+                banner.style.display = 'none';
+            }
+        }
+
+        // Sensor Acquisition & Tiers
+        async function onSensorsBtnClick() {
+            hideSensorError();
+            
+            if (sensorsRunning) {
+                stopSensors();
+                return;
+            }
+            
+            // iOS Motion Permissions
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                logMessage("iOS device identified. Requesting device motion permissions...", "info");
+                try {
+                    const permissionState = await DeviceMotionEvent.requestPermission();
+                    logMessage(`Device motion permissions response: ${permissionState}`, "info");
+                    if (permissionState === 'granted') {
+                        startSensors();
+                    } else {
+                        showSensorError("Sensor permissions denied. Allow motion access in iOS settings to run classifier.");
+                    }
+                } catch (err) {
+                    logMessage(`iOS motion permission prompt failed: ${err.message}`, "error");
+                    showSensorError("iOS permission prompt failed: " + err.message);
+                }
+            } else {
+                startSensors();
+            }
+        }
+
+        function startSensors() {
+            logMessage("Starting sensor acquisition procedures...", "info");
+            resetBuffer();
+            clearAllTimersAndListeners();
+            
+            // Tier 1: Generic W3C Sensor API
+            if (typeof LinearAccelerationSensor === 'function') {
+                try {
+                    logMessage("Attempting Tier 1: LinearAccelerationSensor", "info");
+                    let sensor = new LinearAccelerationSensor({ frequency: 62.5 });
+                    activeSensorObj = sensor;
+                    
+                    sensor.addEventListener('error', (event) => {
+                        logMessage(`LinearAccelerationSensor failed (${event.error.name}). Executing Fallback to Tier 2.`, "warning");
+                        sensor.stop();
+                        if (activeSensorObj === sensor) activeSensorObj = null;
+                        startTier2();
+                    });
+                    
+                    sensor.addEventListener('reading', () => {
+                        latestRaw.x = sensor.x || 0;
+                        latestRaw.y = sensor.y || 0;
+                        latestRaw.z = sensor.z || 0;
+                    });
+                    
+                    sensor.start();
+                    sensorsRunning = true;
+                    updateSensorStateUI(true, "LinearAccel (T1)");
+                    logMessage("Sensor mode selected: LinearAccelerationSensor (Tier 1)", "success");
+                    startLoopsAndVisualizer();
+                } catch (e) {
+                    logMessage(`LinearAccelerationSensor construction failed: ${e.message}. Executing Fallback to Tier 2.`, "warning");
+                    activeSensorObj = null;
+                    startTier2();
+                }
+            } else {
+                logMessage("LinearAccelerationSensor not supported. Executing Fallback to Tier 2.", "info");
+                startTier2();
+            }
+        }
+
+        function startTier2() {
+            logMessage("Attempting Tier 2: DeviceMotionEvent acceleration", "info");
+            clearAllTimersAndListeners();
+            
+            let hasReceivedData = false;
+            let checkTimeout = null;
+            
+            const handleDeviceMotion = (event) => {
+                const acc = event.acceleration;
+                if (acc && acc.x !== null && acc.y !== null && acc.z !== null) {
+                    hasReceivedData = true;
+                    latestRaw.x = acc.x;
+                    latestRaw.y = acc.y;
+                    latestRaw.z = acc.z;
+                    
+                    if (!sensorsRunning) {
+                        sensorsRunning = true;
+                        updateSensorStateUI(true, "DeviceMotion (T2)");
+                        logMessage("Sensor mode selected: DeviceMotionEvent Accel (Tier 2)", "success");
+                        startLoopsAndVisualizer();
+                    }
+                }
+            };
+            
+            window.addEventListener('devicemotion', handleDeviceMotion);
+            activeEventListeners.push({ type: 'devicemotion', listener: handleDeviceMotion });
+            
+            // Set 300ms verification timer
+            checkTimeout = setTimeout(() => {
+                if (!hasReceivedData) {
+                    logMessage("Tier 2 acceleration object returned null values. Executing Fallback to Tier 3.", "warning");
+                    window.removeEventListener('devicemotion', handleDeviceMotion);
+                    activeEventListeners = activeEventListeners.filter(l => l.listener !== handleDeviceMotion);
+                    startTier3();
+                }
+            }, 300);
+            activeTimeouts.push(checkTimeout);
+        }
+
+        function startTier3() {
+            logMessage("Attempting Tier 3: DeviceMotionEvent accelerationIncludingGravity + HPF", "info");
+            clearAllTimersAndListeners();
+            
+            let gravity = { x: 0, y: 0, z: 0 };
+            let isFirstSample = true;
+            let hasReceivedData = false;
+            let checkTimeout = null;
+            
+            const handleDeviceMotionIncludingGravity = (event) => {
+                const raw = event.accelerationIncludingGravity;
+                if (raw && raw.x !== null && raw.y !== null && raw.z !== null) {
+                    hasReceivedData = true;
+                    
+                    if (isFirstSample) {
+                        gravity.x = raw.x;
+                        gravity.y = raw.y;
+                        gravity.z = raw.z;
+                        isFirstSample = false;
+                    }
+                    
+                    // HPF gravity extraction (alpha = 0.9)
+                    const alpha = 0.9;
+                    gravity.x = alpha * gravity.x + (1 - alpha) * raw.x;
+                    gravity.y = alpha * gravity.y + (1 - alpha) * raw.y;
+                    gravity.z = alpha * gravity.z + (1 - alpha) * raw.z;
+                    
+                    latestRaw.x = raw.x - gravity.x;
+                    latestRaw.y = raw.y - gravity.y;
+                    latestRaw.z = raw.z - gravity.z;
+                    
+                    if (!sensorsRunning) {
+                        sensorsRunning = true;
+                        updateSensorStateUI(true, "Gravity-Filter (T3)");
+                        logMessage("Sensor mode selected: DeviceMotionEvent + HPF Gravity (Tier 3)", "success");
+                        startLoopsAndVisualizer();
+                    }
+                }
+            };
+            
+            window.addEventListener('devicemotion', handleDeviceMotionIncludingGravity);
+            activeEventListeners.push({ type: 'devicemotion', listener: handleDeviceMotionIncludingGravity });
+            
+            // Set 300ms verification timer
+            checkTimeout = setTimeout(() => {
+                if (!hasReceivedData) {
+                    logMessage("Tier 3 gravity-based acceleration is unavailable. No sensor system detected.", "error");
+                    window.removeEventListener('devicemotion', handleDeviceMotionIncludingGravity);
+                    activeEventListeners = activeEventListeners.filter(l => l.listener !== handleDeviceMotionIncludingGravity);
+                    showSensorError("No motion sensors are responding. Ensure you are on a physical Android or iPhone mobile device.");
+                    stopSensors();
+                }
+            }, 300);
+            activeTimeouts.push(checkTimeout);
+        }
+
+        function stopSensors() {
+            logMessage("Stopping sensor acquisition and clearing buffers...", "info");
+            sensorsRunning = false;
+            clearAllTimersAndListeners();
+            resetBuffer();
+            resetDashboardUI();
+            updateSensorStateUI(false, "Sensors Off");
+            
+            document.getElementById('val-x').textContent = "0.00";
+            document.getElementById('val-y').textContent = "0.00";
+            document.getElementById('val-z').textContent = "0.00";
+        }
+
+        function startLoopsAndVisualizer() {
+            // Sampling loop at 62.5Hz (16ms)
+            sampleInterval = setInterval(collectSample, 16);
+            activeIntervals.push(sampleInterval);
+            
+            // Inference loop at 80ms
+            inferenceInterval = setInterval(runContinuousInference, 80);
+            activeIntervals.push(inferenceInterval);
+            
+            // 60 FPS drawing loop
+            startWaveform();
+        }
+
+        function updateSensorStateUI(running, badgeText) {
+            const badge = document.getElementById('sensor-badge');
+            const btn = document.getElementById('btn-sensors');
+            
+            if (badge) {
+                badge.textContent = badgeText;
+                if (running) {
+                    badge.classList.add('active');
+                } else {
+                    badge.classList.remove('active');
+                }
+            }
+            
+            if (btn) {
+                if (running) {
+                    btn.textContent = "STOP SENSORS";
+                    btn.className = "btn active";
+                } else {
+                    btn.textContent = "START SENSORS";
+                    btn.className = "btn btn-pulse";
+                }
+            }
+        }
+
+        function clearAllTimersAndListeners() {
+            if (sampleInterval) { clearInterval(sampleInterval); sampleInterval = null; }
+            if (inferenceInterval) { clearInterval(inferenceInterval); inferenceInterval = null; }
+            
+            activeIntervals.forEach(clearInterval);
+            activeIntervals = [];
+            
+            activeTimeouts.forEach(clearTimeout);
+            activeTimeouts = [];
+            
+            activeEventListeners.forEach(item => {
+                window.removeEventListener(item.type, item.listener);
+            });
+            activeEventListeners = [];
+            
+            if (activeSensorObj) {
+                try {
+                    activeSensorObj.stop();
+                } catch(e) {}
+                activeSensorObj = null;
+            }
+            
+            if (animFrameId) {
+                cancelAnimationFrame(animFrameId);
+                animFrameId = null;
+            }
+        }
+
+        // Responsive Live Visualizer
+        const canvas = document.getElementById('waveform');
+        const ctx = canvas.getContext('2d');
+
+        function startWaveform() {
+            function draw() {
+                animFrameId = requestAnimationFrame(draw);
+                
+                // Align resolution with stylesheet height and width
+                if (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight) {
+                    canvas.width = canvas.clientWidth;
+                    canvas.height = canvas.clientHeight;
+                }
+                
+                const w = canvas.width;
+                const h = canvas.height;
+                const centerY = h / 2;
+                
+                ctx.clearRect(0, 0, w, h);
+                
+                // Draw background grid lines
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+                ctx.lineWidth = 1;
+                
+                for (let x = 0; x < w; x += w / 10) {
+                    ctx.beginPath();
+                    ctx.moveTo(x, 0);
+                    ctx.lineTo(x, h);
+                    ctx.stroke();
+                }
+                
+                for (let y = 0; y < h; y += h / 6) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(w, y);
+                    ctx.stroke();
+                }
+                
+                // Horizontal reference axis (0 linear acceleration)
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.moveTo(0, centerY);
+                ctx.lineTo(w, centerY);
+                ctx.stroke();
+                
+                // Render numerical axes labels in 60 FPS loop
+                document.getElementById('val-x').textContent = latestRaw.x.toFixed(2);
+                document.getElementById('val-y').textContent = latestRaw.y.toFixed(2);
+                document.getElementById('val-z').textContent = latestRaw.z.toFixed(2);
+                
+                if (sensorBuffer.length === 0) return;
+                
+                const step = w / (bufferLimit - 1);
+                const valScale = h / 32; // Fit ~[-16, 16] m/s2 range
+                
+                // Plot X, Y, Z channels
+                drawAxisChannel(sensorBuffer, 0, '#ff2d55', step, centerY, valScale); // X (Red)
+                drawAxisChannel(sensorBuffer, 1, '#34c759', step, centerY, valScale); // Y (Green)
+                drawAxisChannel(sensorBuffer, 2, '#00f2fe', step, centerY, valScale); // Z (Blue)
+            }
+            
+            animFrameId = requestAnimationFrame(draw);
+        }
+
+        function drawAxisChannel(samples, idx, color, step, centerY, scale) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2.2;
+            ctx.lineJoin = 'round';
+            ctx.lineCap = 'round';
+            
+            // Mobile optimized waveform rendering (disabled shadowBlur on mobile for 60 FPS)
+            const isDesktop = window.innerWidth >= 1025;
+            if (isDesktop) {
+                ctx.shadowBlur = 5;
+                ctx.shadowColor = color;
+            }
+            
+            ctx.beginPath();
+            for (let i = 0; i < samples.length; i++) {
+                const val = samples[i][idx];
+                const x = i * step;
+                const y = centerY - (val * scale);
+                
+                if (i === 0) {
+                    ctx.moveTo(x, y);
+                } else {
+                    ctx.lineTo(x, y);
+                }
+            }
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        // Redraw on window resize / orientation changes
+        window.addEventListener('resize', () => {
+            if (canvas && (canvas.width !== canvas.clientWidth || canvas.height !== canvas.clientHeight)) {
+                canvas.width = canvas.clientWidth;
+                canvas.height = canvas.clientHeight;
+            }
+        });
+    </script>
+</body>
+</html>
